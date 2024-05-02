@@ -11,7 +11,7 @@ import {
 } from "antd";
 import { API_URL } from "../../common/constants";
 import { AuthContext } from "@/contexts/AuthContext";
-import { ITag, ILocation } from "@/common/interfaces";
+import { ITag } from "@/common/interfaces";
 
 const { Option } = Select;
 
@@ -19,37 +19,15 @@ function CreateEvent() {
   const router = useRouter();
   const { authState } = useContext(AuthContext);
   const [tags, setTags] = useState<ITag[]>([]);
-  const [locations, setLocations] = useState<ILocation[]>([]);
-  const [showCreateLocation, setShowCreateLocation] = useState(false);
 
   const handleCreateEvent = async (values: any) => {
-    let {
-      exp_time,
-      description,
-      qty,
-      tags,
-      location_address,
-      location_floor,
-      location_room,
-      location_note,
-      locationID,
-    } = values;
-    console.log("!!!");
-    console.log(location);
+    let { exp_time, description, qty, tags } = values;
+
     if (tags == undefined) {
       tags = [];
     }
 
     try {
-      if (locationID) {
-        let location = locations.filter(
-          (location) => (location.id = locationID)
-        )[0];
-        location_address = location.Address;
-        location_floor = location.floor;
-        location_room = location.room;
-        location_note = location.loc_note;
-      }
       const response = await fetch(`${API_URL}/api/events/create`, {
         method: "POST",
         headers: {
@@ -61,12 +39,6 @@ function CreateEvent() {
           description,
           qty: qty.toString(),
           tags,
-          location: {
-            Address: location_address,
-            floor: parseInt(location_floor),
-            room: location_room,
-            loc_note: location_note,
-          },
         }),
       });
 
@@ -86,7 +58,6 @@ function CreateEvent() {
       message.error("Failed to create event. Please try again.");
     }
   };
-
   const getTags = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/api/tags/`, {
@@ -107,35 +78,6 @@ function CreateEvent() {
   useEffect(() => {
     getTags();
   }, [getTags]);
-
-  const getLocations = useCallback(async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/locations/`, {
-        headers: {
-          Authorization: `Bearer ${authState?.token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to fetch locations: ${response.statusText}`);
-      }
-      const data = await response.json();
-      setLocations(data);
-    } catch (error) {
-      console.error("Error fetching locations:", error);
-    }
-  }, [authState?.token]);
-
-  useEffect(() => {
-    getLocations();
-  }, [getLocations]);
-
-  const handleShowCreateLocation = () => {
-    setShowCreateLocation(true);
-  };
-
-  const handleShowExistingLocations = () => {
-    setShowCreateLocation(false);
-  };
 
   return (
     <div
@@ -210,60 +152,6 @@ function CreateEvent() {
               ))}
             </Select>
           </Form.Item>
-          <div style={{ marginBottom: "20px" }}>
-            <Button onClick={handleShowExistingLocations}>
-              Select from existing locations
-            </Button>
-            <Button onClick={handleShowCreateLocation}>
-              Create new location
-            </Button>
-          </div>
-          {showCreateLocation ? (
-            <div>
-              <Form.Item
-                label="Address"
-                name="location_address"
-                style={{ width: "100%" }}
-              >
-                <Input />
-              </Form.Item>
-              <Form.Item
-                label="Floor"
-                name="location_floor"
-                style={{ width: "100%" }}
-              >
-                <Input type="number" min={0} />
-              </Form.Item>
-              <Form.Item
-                label="Room"
-                name="location_room"
-                style={{ width: "100%" }}
-              >
-                <Input />
-              </Form.Item>
-              <Form.Item
-                label="Note"
-                name="location_note"
-                style={{ width: "100%" }}
-              >
-                <Input.TextArea rows={4} />
-              </Form.Item>
-            </div>
-          ) : (
-            <Form.Item
-              label="Location"
-              name="locationID"
-              style={{ width: "100%" }}
-            >
-              <Select allowClear>
-                {locations.map((loc) => (
-                  <Option key={loc.id} value={loc.id}>
-                    {loc.Address}, Floor: {loc.floor}, Room: {loc.room}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-          )}
           <Form.Item style={{ textAlign: "center", width: "100%" }}>
             <Button
               htmlType="submit"
