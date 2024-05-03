@@ -8,10 +8,13 @@ import {
   Select,
   DatePicker,
   InputNumber,
+  Upload,
 } from "antd";
 import { API_URL } from "../../common/constants";
 import { AuthContext } from "@/contexts/AuthContext";
-import { ITag, ILocation } from "@/common/interfaces";
+import { IPhoto, ITag, ILocation } from "@/common/interfaces";
+import { UploadOutlined } from "@ant-design/icons";
+
 
 const { Option } = Select;
 
@@ -199,6 +202,15 @@ function CreateEvent() {
             style={{ width: "100%" }}
           >
             <InputNumber min={0} />
+            <Form.Item
+              label="Upload Photos"
+              name="upload"
+              style={{ width: "100%", marginTop: "3vh" }}
+            >
+              <Upload {...uploadProps}>
+                <Button icon={<UploadOutlined />}>Upload</Button>
+              </Upload>
+            </Form.Item>
           </Form.Item>
           <Form.Item label="Tags" name="tags" style={{ width: "100%" }}>
             <Select mode="multiple" allowClear>
