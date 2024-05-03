@@ -23,31 +23,58 @@ function CreateEvent() {
   const router = useRouter();
   const { authState } = useContext(AuthContext);
   const [tags, setTags] = useState<ITag[]>([]);
-  const [postImage, setPostImage] = useState<IPhoto[]>([]);
+  const [postStrs, setPostStrs] = useState<String[]>([]);
 
-  // Upload functionality
-  const convertToBase64 = (file: any) => {
+  const convertToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const fileReader = new FileReader();
       fileReader.readAsDataURL(file);
       fileReader.onload = () => {
-        resolve(fileReader.result);
+        const result = fileReader.result;
+        if (typeof result === 'string' && result.startsWith('data:')) {
+          resolve(result.split(',')[1]);
+        } else {
+          reject(new Error('Invalid file format or empty result'));
+        }
       };
       fileReader.onerror = (error) => {
         reject(error);
       };
     });
   };
-
+  
+  const processFileList = async (files: File[]): Promise<string[]> => {
+    const base64List: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const base64String: string = await convertToBase64(files[i]);
+      base64List.push(base64String);
+    }
+    return base64List;
+  };
+  
+  const handleChange = async (info: any) => {
+    let newPostStrs: any[] = [...info.fileList];
+  
+    // Limit the number of uploaded files
+    // Only to show two recent uploaded files, and old ones will be replaced by the new
+    newPostStrs = newPostStrs.slice(-10);
+    setPostStrs(newPostStrs);
+  
+    // Convert the array of File objects into a FileList
+    const fileList: File[] = newPostStrs.map((file: any) => file.originFileObj);
+  
+    const base64List: string[] = await processFileList(fileList);
+  };
   const uploadProps: UploadProps = {
-    action: `${API_URL}/api/images/create`,
-    listType: "picture",
+    listType: "picture",  
+    onChange: handleChange,
+    multiple: true,
     async previewFile(file: any) {
-      const base64Obj: any = await convertToBase64(file)
-      const base64String: String =  base64Obj.split(',')[1] //get only the string from the object
+      
+      const base64String: any = await convertToBase64(file)
       if(!base64String) {console.log('No base64String'); return;}
       // console.log("Your base64String:", base64String); 
-     
+      if(file.run){return}
       return await fetch(`${API_URL}/api/images/create`, {
         method: "POST",
         body: JSON.stringify({base64String}),
@@ -64,6 +91,7 @@ function CreateEvent() {
       })
       .then((data) => {
         console.log("Upload response:", data); // Log the response here
+        file.run = true
         return data.thumbnail;
       })
       .catch((error) => {
