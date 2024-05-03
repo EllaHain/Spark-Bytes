@@ -65,16 +65,25 @@ function CreateEvent() {
   
     const base64List: string[] = await processFileList(fileList);
   };
+
+  const handleRemove = async (info: any) =>{
+    const fileRemoved = info.originFileObj
+    // const base64String: any = await convertToBase64(fileRemoved)
+    // console.log(base64String)
+    const newPostStrs = postStrs.filter(item => item.uid !== fileRemoved.uid);
+    setPostStrs(newPostStrs)
+  }
   const uploadProps: UploadProps = {
     listType: "picture",  
     onChange: handleChange,
+    onRemove: handleRemove,
     multiple: true,
     async previewFile(file: any) {
       
       const base64String: any = await convertToBase64(file)
       if(!base64String) {console.log('No base64String'); return;}
-      // console.log("Your base64String:", base64String); 
-      if(file.run){return}
+      if(file.run){return} //prevents function from being run multiple times
+      setLocations([...postStrs, base64String]) //updates to add new image to list
       return await fetch(`${API_URL}/api/images/create`, {
         method: "POST",
         body: JSON.stringify({base64String}),
