@@ -38,33 +38,44 @@ function CreateEvent() {
       };
     });
   };
-  // const handleFileUpload = async (e: any) => {
-  //   const file = e.target.files[0];
-  //   const base64: string = await convertToBase64(file);
-  //   const newPhoto: IPhoto = { id: number;
-  //     photo: base64;
-  //     event_id: number;};
-  //   setPostImage(prevPhotos => [...prevPhotos, newPhoto]);
-  // };
 
   const uploadProps: UploadProps = {
-    action: "//jsonplaceholder.typicode.com/posts/",
+    action: `${API_URL}/api/images/create`,
     listType: "picture",
     async previewFile(file: any) {
-      console.log("Your upload file:", file);
       const base64Obj: any = await convertToBase64(file)
       const base64String: String =  base64Obj.split(',')[1] //get only the string from the object
       if(!base64String) {console.log('No base64String'); return;}
-      console.log("Your base64String:", base64String); 
+      // console.log("Your base64String:", base64String); 
      
-      return await fetch(`${API_URL}/api/events/create/imageUpload`, {
+      return await fetch(`${API_URL}/api/images/create`, {
         method: "POST",
         body: JSON.stringify({base64String}),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authState?.token}`,
+        },
       })
-        .then((res) => res.json())
-        .then(({ thumbnail }) => thumbnail);
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error('Failed to upload image');
+        }
+        return res.json();
+      })
+      .then((data) => {
+        console.log("Upload response:", data); // Log the response here
+        return data.thumbnail;
+      })
+      .catch((error) => {
+        console.error('Error uploading image:', error);
+      });
     },
   };
+
+  const handleResponse = (newImages: IPhoto) =>{
+    setPostImage([...postImage, newImages])
+    console.log('images posted')
+  }
   const [locations, setLocations] = useState<ILocation[]>([]);
   const [showCreateLocation, setShowCreateLocation] = useState(false);
 
@@ -73,6 +84,7 @@ function CreateEvent() {
       exp_time,
       description,
       qty,
+      photos,
       tags,
       location_address,
       location_floor,
@@ -105,6 +117,7 @@ function CreateEvent() {
         body: JSON.stringify({
           exp_time,
           description,
+          photos,
           qty: qty.toString(),
           tags,
           location: {
@@ -247,7 +260,7 @@ function CreateEvent() {
             <InputNumber min={0} />
             <Form.Item
               label="Upload Photos"
-              name="upload"
+              name="photos"
               style={{ width: "100%", marginTop: "3vh" }}
             >
               <Upload {...uploadProps}>

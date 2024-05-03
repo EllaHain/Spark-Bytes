@@ -6,6 +6,7 @@ import eventsRouter from './event/event.router.ts';
 import tagsRouter from './tags/tags.router.ts';
 import authRouter from './auth/auth.router.ts'
 import locsRouter from './location/location.router.ts';
+import imageRouter from './image/image.router.ts'
 
 const app = express();
 
@@ -21,5 +22,6 @@ app.use('/api/auth', authRouter);
 app.use('/api/events', eventsRouter);
 app.use('/api/tags', tagsRouter);
 app.use('/api/locations', locsRouter);
+app.use('/api/images', imageRouter);
 
 export default app;
