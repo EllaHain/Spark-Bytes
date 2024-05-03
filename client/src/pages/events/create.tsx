@@ -9,6 +9,7 @@ import {
   DatePicker,
   InputNumber,
   Upload,
+  UploadProps,
 } from "antd";
 import { API_URL } from "../../common/constants";
 import { AuthContext } from "@/contexts/AuthContext";
@@ -22,6 +23,48 @@ function CreateEvent() {
   const router = useRouter();
   const { authState } = useContext(AuthContext);
   const [tags, setTags] = useState<ITag[]>([]);
+  const [postImage, setPostImage] = useState<IPhoto[]>([]);
+
+  // Upload functionality
+  const convertToBase64 = (file: any) => {
+    return new Promise((resolve, reject) => {
+      const fileReader = new FileReader();
+      fileReader.readAsDataURL(file);
+      fileReader.onload = () => {
+        resolve(fileReader.result);
+      };
+      fileReader.onerror = (error) => {
+        reject(error);
+      };
+    });
+  };
+  // const handleFileUpload = async (e: any) => {
+  //   const file = e.target.files[0];
+  //   const base64: string = await convertToBase64(file);
+  //   const newPhoto: IPhoto = { id: number;
+  //     photo: base64;
+  //     event_id: number;};
+  //   setPostImage(prevPhotos => [...prevPhotos, newPhoto]);
+  // };
+
+  const uploadProps: UploadProps = {
+    action: "//jsonplaceholder.typicode.com/posts/",
+    listType: "picture",
+    async previewFile(file: any) {
+      console.log("Your upload file:", file);
+      const base64Obj: any = await convertToBase64(file)
+      const base64String: String =  base64Obj.split(',')[1] //get only the string from the object
+      if(!base64String) {console.log('No base64String'); return;}
+      console.log("Your base64String:", base64String); 
+     
+      return await fetch(`${API_URL}/api/events/create/imageUpload`, {
+        method: "POST",
+        body: JSON.stringify({base64String}),
+      })
+        .then((res) => res.json())
+        .then(({ thumbnail }) => thumbnail);
+    },
+  };
   const [locations, setLocations] = useState<ILocation[]>([]);
   const [showCreateLocation, setShowCreateLocation] = useState(false);
 
