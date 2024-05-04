@@ -17,7 +17,7 @@ export const submitImages = async(req: Request, res: Response) => {
                 const newPost = await prisma.photo.create({
                     data: {
                         photo: postStrs[i],
-                        event_id: 1 
+                        event_id: 1 //need to fix this
                     }
                 });
                 newPosts.push(newPost);

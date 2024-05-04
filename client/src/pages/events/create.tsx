@@ -96,6 +96,31 @@ function CreateEvent() {
     }
   };
 
+  const addImages = async (event: any, eventId: number) => {
+    console.log(event.newEvent)
+    try {
+      const res = await fetch(`${API_URL}/api/events/edit/${eventId}`, {
+        method: "PUT",
+        body: JSON.stringify({postStrs: postStrs, event: event.newEvent}),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authState?.token}`,
+        },
+      });
+  
+      if (!res.ok) {
+        throw new Error('Failed to submit form');
+      }
+  
+      const data = await res.json();
+      console.log("Submission response:", data);
+      return data;
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      throw error; 
+    }
+  };
+
   const uploadProps: UploadProps = {
     listType: "picture",
     onChange: handleChange,
@@ -141,21 +166,21 @@ function CreateEvent() {
     if (tags == undefined) {
       tags = [];
     }
-    let photoIds;
-    try {
-       const rawPhotoIds = await handleSubmit()
-      if(rawPhotoIds){
-        photoIds = rawPhotoIds.ids
-        console.log('rawPhotoIds:', rawPhotoIds)
-      }
-    } catch (error) {
-      console.log(error)
-    }
-    console.log('photoIds:', photoIds)
-
+    // let photoIds;
+    // try {
+    //    const rawPhotoIds = await handleSubmit()
+    //   if(rawPhotoIds){
+    //     photoIds = rawPhotoIds.ids
+    //     console.log('rawPhotoIds:', rawPhotoIds)
+    //   }
+    // } catch (error) {
+    //   console.log(error)
+    // }
+    // console.log('photoIds:', photoIds)
+    let location;
     try {
       if (locationID) {
-        let location = locations.filter(
+        location = locations.filter(
           (location) => (location.id = locationID)
         )[0];
         location_address = location.Address;
@@ -172,7 +197,6 @@ function CreateEvent() {
         body: JSON.stringify({
           exp_time,
           description,
-          photoIds,
           qty: qty.toString(),
           tags,
           location: {
@@ -187,7 +211,11 @@ function CreateEvent() {
       if (response.ok) {
         message.success("Event Successfully Created");
         router.push("/events");
-        console.log(response);
+        const data = await response.json()
+        // if(!data.location) data['location'] = location
+        // console.log('data.location', data.location)
+        const eventId = data.event_id
+        addImages(data, eventId)
       } else {
         if (response.status === 409) {
           message.error("Event not Successfully Created");

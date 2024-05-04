@@ -98,10 +98,9 @@ export const get_event_by_id = async (req: Request, res: Response) => {
 };
 
 export const create_event = async (req: Request, res: Response) => {
-  const { exp_time, description, qty, tags, location, photoIds } = req.body;
-  console.log('photoIds:', photoIds)
-  const photoList = []
-  if(photoIds)  photoList.push[photoIds]
+  const { exp_time, description, qty, tags, location } = req.body;
+  console.log('location:', location)
+
   try {
     const userId = req.body.user.id;
     const now = new Date().toISOString();
@@ -141,16 +140,13 @@ export const create_event = async (req: Request, res: Response) => {
             loc_note: location.loc_note,
           },
         },
-        ...(photoList.length > 0 && { // Using spread operator to conditionally include photos
-          photos: {
-            connect: photoList.map((photoId: number) => ({ id: photoId })),
-          },
-        }),
       },
     });
 
     // Generate JWT token
     const token = jwt.sign({ userId }, 'JWT_TOKEN_SECRET');
+
+    console.log(newEvent)
 
     res.status(201).json({ newEvent, token }); 
   } catch (error) {
@@ -162,7 +158,7 @@ export const create_event = async (req: Request, res: Response) => {
 
 export const edit_event = async (req: Request, res: Response) => {
   const { event_id } = req.params;
-  const { exp_time, description, qty, location, photo, tag_ids } = req.body;
+  const { exp_time, description, qty, photo, tag_ids } = req.body;
 
   try {
     const updatedEvent = await prisma.event.update({
@@ -173,17 +169,17 @@ export const edit_event = async (req: Request, res: Response) => {
         exp_time,
         description,
         qty,
-        location: {
-          update: {
-            Address: location.Address,
-            floor: location.floor,
-            room: location.room,
-            loc_note: location.loc_note,
-          },
-        },
-        tags: {
-          set: tag_ids.map((tag_id: number) => ({ tag_id })),
-        },
+        // location: {
+        //   update: {
+        //     Address: location.Address,
+        //     floor: location.floor,
+        //     room: location.room,
+        //     loc_note: location.loc_note,
+        //   },
+        // },
+        // tags: {
+        //   set: tag_ids.map((tag_id: number) => ({ tag_id })),
+        // },
       },
       include: {
         tags: true,
