@@ -53,6 +53,12 @@ function SideMenu() {
             key: "/events/create",
             icon: <PlusOutlined />,
           },
+          //added for bonus task
+          {
+            label: "Admin Control",
+            key: "/admin",
+            icon: <PlusOutlined />,
+          },
         ]}
       ></Menu>
       <Menu
