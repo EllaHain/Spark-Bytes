@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.use(authToken);
 
-router.post('/create', imageController.createImage);
+// router.post('/create', imageController.createImage);
+router.post('/submit', imageController.submitImages);
 
 export default router;

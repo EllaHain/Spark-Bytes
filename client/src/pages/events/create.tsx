@@ -58,12 +58,10 @@ function CreateEvent() {
     // Limit the number of uploaded files
     // Only to show two recent uploaded files, and old ones will be replaced by the new
     newPostStrs = newPostStrs.slice(-10);
-    setPostStrs(newPostStrs);
-  
-    // Convert the array of File objects into a FileList
     const fileList: File[] = newPostStrs.map((file: any) => file.originFileObj);
-  
     const base64List: string[] = await processFileList(fileList);
+    setPostStrs(base64List);
+    
   };
 
   const handleRemove = async (info: any) =>{
@@ -73,46 +71,58 @@ function CreateEvent() {
     const newPostStrs = postStrs.filter(item => item.uid !== fileRemoved.uid);
     setPostStrs(newPostStrs)
   }
-  const uploadProps: UploadProps = {
-    listType: "picture",  
-    onChange: handleChange,
-    onRemove: handleRemove,
-    multiple: true,
-    async previewFile(file: any) {
-      
-      const base64String: any = await convertToBase64(file)
-      if(!base64String) {console.log('No base64String'); return;}
-      if(file.run){return} //prevents function from being run multiple times
-      setLocations([...postStrs, base64String]) //updates to add new image to list
-      return await fetch(`${API_URL}/api/images/create`, {
+
+  const handleSubmit = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/images/submit`, {
         method: "POST",
-        body: JSON.stringify({base64String}),
+        body: JSON.stringify({postStrs: postStrs}),
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authState?.token}`,
         },
-      })
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error('Failed to upload image');
-        }
-        return res.json();
-      })
-      .then((data) => {
-        console.log("Upload response:", data); // Log the response here
-        file.run = true
-        return data.thumbnail;
-      })
-      .catch((error) => {
-        console.error('Error uploading image:', error);
       });
+  
+      if (!res.ok) {
+        throw new Error('Failed to submit form');
+      }
+  
+      const data = await res.json();
+      console.log("Submission response:", data);
+      return data;
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      throw error; 
+    }
+  };
+
+  const uploadProps: UploadProps = {
+    listType: "picture",
+    onChange: handleChange,
+    onRemove: handleRemove,
+    multiple: true,
+    previewFile: async (file: any) => {
+      try {
+        const base64String: any = await convertToBase64(file);
+        if (!base64String) {
+          console.log('No base64String');
+          return;
+        }
+        if (file.run) {
+          return;
+        } //prevents function from being run multiple times
+        
+        setPostStrs([...postStrs, base64String]); //updates to add new image to list
+        file.run = true;
+        
+        return base64String; // Return the base64 string here
+      } catch (error) {
+        console.error('Error previewing file:', error);
+        throw error; // Rethrow the error to propagate it
+      }
     },
   };
 
-  const handleResponse = (newImages: IPhoto) =>{
-    setPostImage([...postImage, newImages])
-    console.log('images posted')
-  }
   const [locations, setLocations] = useState<ILocation[]>([]);
   const [showCreateLocation, setShowCreateLocation] = useState(false);
 
@@ -121,7 +131,6 @@ function CreateEvent() {
       exp_time,
       description,
       qty,
-      photos,
       tags,
       location_address,
       location_floor,
@@ -129,11 +138,20 @@ function CreateEvent() {
       location_note,
       locationID,
     } = values;
-    console.log("!!!");
-    console.log(location);
     if (tags == undefined) {
       tags = [];
     }
+    let photoIds;
+    try {
+       const rawPhotoIds = await handleSubmit()
+      if(rawPhotoIds){
+        photoIds = rawPhotoIds.ids
+        console.log('rawPhotoIds:', rawPhotoIds)
+      }
+    } catch (error) {
+      console.log(error)
+    }
+    console.log('photoIds:', photoIds)
 
     try {
       if (locationID) {
@@ -154,7 +172,7 @@ function CreateEvent() {
         body: JSON.stringify({
           exp_time,
           description,
-          photos,
+          photoIds,
           qty: qty.toString(),
           tags,
           location: {
@@ -294,7 +312,9 @@ function CreateEvent() {
             rules={[{ required: true, message: "Please enter a quantity" }]}
             style={{ width: "100%" }}
           >
-            <InputNumber min={0} />
+             <InputNumber min={0} />
+            </Form.Item>
+           
             <Form.Item
               label="Upload Photos"
               name="photos"
@@ -304,7 +324,7 @@ function CreateEvent() {
                 <Button icon={<UploadOutlined />}>Upload</Button>
               </Upload>
             </Form.Item>
-          </Form.Item>
+          
           <Form.Item label="Tags" name="tags" style={{ width: "100%" }}>
             <Select mode="multiple" allowClear>
               {tags.map((tag) => (

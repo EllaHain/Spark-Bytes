@@ -98,7 +98,10 @@ export const get_event_by_id = async (req: Request, res: Response) => {
 };
 
 export const create_event = async (req: Request, res: Response) => {
-  const { exp_time, description, qty, tags, location } = req.body;
+  const { exp_time, description, qty, tags, location, photoIds } = req.body;
+  console.log('photoIds:', photoIds)
+  const photoList = []
+  if(photoIds)  photoList.push[photoIds]
   try {
     const userId = req.body.user.id;
     const now = new Date().toISOString();
@@ -138,6 +141,11 @@ export const create_event = async (req: Request, res: Response) => {
             loc_note: location.loc_note,
           },
         },
+        ...(photoList.length > 0 && { // Using spread operator to conditionally include photos
+          photos: {
+            connect: photoList.map((photoId: number) => ({ id: photoId })),
+          },
+        }),
       },
     });
 
